@@ -1,0 +1,16 @@
+version: 0.5
+nodes:
+  llm:
+    agent: openAIAgent
+    params:
+      model: gpt-4
+    inputs:
+      prompt: あなたは誰ですか？簡単な挨拶をしてください。
+  output:
+    agent: copyAgent
+    params:
+      namedKey: text
+    console:
+      after: true
+    inputs:
+      text: :llm.text
