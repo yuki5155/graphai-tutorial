@@ -1,0 +1,92 @@
+version: 0.5
+nodes:
+  # 1. コンテンツの準備
+  source:
+    value: |
+      GraphAIは非同期データフロー実行エンジンです。
+      開発者がYAMLやJSONでエージェントワークフローを宣言的に記述することで、
+      エージェントアプリケーションを構築できます。
+      
+      GraphAIには2種類のノードがあります。
+      計算ノードはエージェントに関連付けられ、特定の計算を実行します。
+      静的ノードは、コンピュータ言語の変数のように値のプレースホルダーです。
+      
+      GraphAIは設計上、データフローグラフを非巡回にする必要がありますが、
+      ループ、ネスト、if/unless、マッピングなどの制御フローメカニズムが追加されています。
+
+  query:
+    value: GraphAIのノードの種類について教えてください。
+
+  # 2. テキストのチャンキング
+  chunks:
+    agent: stringSplitterAgent
+    inputs:
+      text: :source
+    params:
+      separator: "\n\n"  # 段落で分割
+
+  # 3. 各チャンクのembedding取得
+  chunkEmbeddings:
+    agent: stringEmbeddingsAgent
+    inputs:
+      array: :chunks.contents
+
+  # 4. クエリのembedding取得
+  queryEmbedding:
+    agent: stringEmbeddingsAgent
+    inputs:
+      item: :query
+
+  # 5. 類似度計算
+  similarities:
+    agent: dotProductAgent
+    inputs:
+      matrix: :chunkEmbeddings
+      vector: :queryEmbedding.$0
+
+  # 6. 類似度でチャンクをソート
+  sortedChunks:
+    agent: sortByValuesAgent
+    inputs:
+      array: :chunks.contents
+      values: :similarities
+
+  # 7. コンテキストの準備
+  referenceText:
+    agent: tokenBoundStringsAgent
+    inputs:
+      chunks: :sortedChunks
+    params:
+      limit: 2000  # トークン数の制限
+
+  # 8. プロンプトの構築
+  prompt:
+    agent: stringTemplateAgent
+    inputs:
+      query: :query
+      context: :referenceText.content
+    params:
+      template: |-
+        以下の文書を参考に質問に答えてください：
+        ${context}
+
+        質問：${query}
+
+  # 9. LLMでの回答生成
+  llmResponse:
+    agent: openAIAgent
+    inputs:
+      prompt: :prompt
+    params:
+      model: gpt-4o
+    console:
+      after: true
+
+  # 10. 結果の出力
+  output:
+    agent: copyAgent
+    inputs:
+      text: :llmResponse.text
+    console:
+      after: true
+    isResult: true
