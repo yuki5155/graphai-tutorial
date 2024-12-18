@@ -6,41 +6,51 @@ const simpleCopyAgent = async (context: {
     inputs: any[];
     params?: any;
 }) => {
-    return { text: context.inputs[0] };
+    const summary = context.inputs[0];
+    const theme = context.inputs[1];
+    return { text: `Summary: ${summary}\nTheme: ${theme}` };
 };
+
+// OpenAIAgentのインスタンスを作成
+const OpenAIAgent = new openAIAgent();
 
 // GraphAIで使用するデータフロー定義
 const graphData = {
     version: 0.2,
     nodes: {
         movieSummary: {
-            id: 'movieSummary',
             agentId: 'openAIAgent',
             params: {
                 model: 'gpt-4'
             },
-            inputs: [{ prompt: 'Explain the plot of The Matrix in one sentence.' }]
+            inputs: [
+                { prompt: 'Explain the plot of The Matrix in one sentence.' }
+            ]
         },
         movieTheme: {
-            id: 'movieTheme',
             agentId: 'openAIAgent',
             params: {
                 model: 'gpt-4'
             },
-            inputs: [{ prompt: 'What is the main theme of The Matrix in one sentence?' }]
+            inputs: [
+                { prompt: 'What is the main theme of The Matrix in one sentence?' }
+            ]
         },
         result: {
-            id: 'result',
             agentId: 'simpleCopyAgent',
-            inputs: [`Summary: ${':movieSummary.text'}\nTheme: ${':movieTheme.text'}`],
+            inputs: [
+                { nodeId: 'movieSummary', key: 'text' },
+                { nodeId: 'movieTheme', key: 'text' }
+            ],
             isResult: true
         }
     }
 };
 
 async function runGraphAI() {
+    // エージェント関数の定義
     const callbackDictionary = {
-        openAIAgent: openAIAgent,
+        openAIAgent: OpenAIAgent.handle.bind(OpenAIAgent),  // bindを使用してthisを保持
         simpleCopyAgent: simpleCopyAgent
     };
 
