@@ -1,0 +1,9 @@
+    1  mkdir typescript-hello
+    2  cd typescript-hello
+    3  yarn init -y
+    4  yarn add typescript ts-node @types/node --dev
+    5  yarn add typescript ts-node @types/node --dev
+    6  yarn tsc --init
+    7  mkdir src
+    8  yarn start
+    9  history >>helloworld.txt
