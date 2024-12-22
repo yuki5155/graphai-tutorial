@@ -1,19 +1,17 @@
 import { GraphAI } from "graphai";
-import * as agents from "@graphai/vanilla";
+import * as vanillaAgents from "@graphai/vanilla";
+import * as openaiAgent from "@graphai/openai_agent";
 
 const graph_data = {
   version: 0.5,
   nodes: {
-    prompt: {
-      value: "What is artificial intelligence?"
-    },
     llm: {
-      agent: "openAICompletionsAgent",  // Changed from openAIAgent to openAICompletionsAgent
+      agent: "openAIAgent",
       params: {
-        model: "gpt-4-turbo-preview"
+        model: "gpt-4"
       },
       inputs: {
-        prompt: ":prompt"
+        prompt: "What is artificial intelligence?"
       }
     },
     output: {
@@ -26,8 +24,7 @@ const graph_data = {
       },
       inputs: {
         text: ":llm.text"
-      },
-      isResult: true
+      }
     }
   }
 };
@@ -38,8 +35,10 @@ export const main = async () => {
     return;
   }
   
-  // Let's also log available agents to debug
-  console.log("Available agents:", Object.keys(agents));
+  const agents = {
+    ...vanillaAgents,
+    ...openaiAgent
+  };
   
   const graph = new GraphAI(graph_data, agents);
   const result = await graph.run();
